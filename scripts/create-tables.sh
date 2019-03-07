@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for file in $(ls *.sql); do
+for file in $(ls bigquery/*.sql); do
     TABLE="$(basename $file .sql)"
     QUERY="$(cat $file | tr "\n" " ")"
     bq --location=US query \

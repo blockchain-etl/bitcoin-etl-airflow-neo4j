@@ -8,7 +8,12 @@ CYPHER_CMD="cypher-shell -u neo4j -p $NEO_PASS -a $NEO_ADDRESS "
 cat create-indexes.cypher | $CYPHER_CMD
 
 # Import blocks
-for bucket_file in $(gsutil ls gs://$BUCKET/blocks); do
-    BASENAME=$(echo $bucket_file|cut -d'/' -f 5)
-    FILENAME=$GS_URL/blocks/$BASENAME envsubst < load-blocks.cypher | $CYPHER_CMD
+#for dataset in blocks txns outputs output_addresses inputs; do
+for dataset in inputs; do
+    for bucket_file in $(gsutil ls gs://$BUCKET/$dataset); do
+        BASENAME=$(echo $bucket_file|cut -d'/' -f 5)
+        FILENAME=$GS_URL/$dataset/$BASENAME 
+        echo "About to ingest $FILENAME"
+        FILENAME=$FILENAME envsubst < load-$dataset.cypher | $CYPHER_CMD
+    done
 done
