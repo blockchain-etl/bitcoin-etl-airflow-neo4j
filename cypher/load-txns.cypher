@@ -11,5 +11,5 @@ CREATE (t:Transaction {hash: row.hash})
 		t.input_count = toInteger(row.input_count),
 		t.output_count = toInteger(row.output_count)
 WITH t, row
-MATCH (b:Block {height: row.block_number})	
-CREATE (t)-[:at]->(b);
+   MATCH (b:Block {height: row.block_number})	
+   CREATE (t)-[:at]->(b);
