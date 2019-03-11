@@ -5,6 +5,6 @@ ON CREATE SET
 		i.input_index = toInteger(row.index),
 		i.is_unspent = toBoolean(false),
 		i.spending_tx_hash = row.hash
-WITH i, row
-    MATCH (t:Transaction {hash: row.tx_hash})
+WITH i
+    MATCH (t:Transaction {hash: i.tx_hash})
     MERGE (i)-[:sent]->(t);

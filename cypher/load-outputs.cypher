@@ -8,4 +8,4 @@ ON CREATE SET
 		o.is_unspent = toBoolean(true)
 WITH o
 	MATCH (t:Transaction {hash: o.tx_hash})	
-	CREATE (o)<-[:received]-(t);
+	MERGE (o)<-[:received]-(t);

@@ -13,4 +13,3 @@ SELECT
  blocks.weight
 FROM `bigquery-public-data.crypto_bitcoin.blocks` as blocks
 WHERE DATE(timestamp) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY) AND DATE(timestamp) < CURRENT_DATE()
- AND number = 565759

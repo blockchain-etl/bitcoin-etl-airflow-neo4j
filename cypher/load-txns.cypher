@@ -12,4 +12,4 @@ CREATE (t:Transaction {hash: row.hash})
 		t.output_count = toInteger(row.output_count)
 WITH t, row
    MATCH (b:Block {height: toInteger(row.block_number)})	
-   CREATE (t)-[:at]->(b);
+   MERGE (t)-[:at]->(b);

@@ -52,11 +52,13 @@ class Checker(object):
         with self._driver.session() as session:
             result = session.read_transaction(self.match_transaction_relationship, "Output", self.txn_hash)
             records = [record for record in result]
-            self.assert_equals(self.output_count + self.input_count,
-                               len(records),
-                               "Mismatch in the number of retrieved outputs")
+            self.assert_equals(self.output_count, len(records), "Mismatch in the number of retrieved outputs")
 
-
+    @staticmethod
+    def match_input_relationship(tx, txn_hash):
+        return tx.run("MATCH (start:Transaction)-[r]-(other:Output) "
+                      "WHERE start.hash='{txn_hash}' "
+                      "RETURN r".format(txn_hash=txn_hash, other=other))
     @staticmethod
     def match_transaction_relationship(tx, other, txn_hash):
         return tx.run("MATCH (start:Transaction)-[r]-(other:{other}) "
