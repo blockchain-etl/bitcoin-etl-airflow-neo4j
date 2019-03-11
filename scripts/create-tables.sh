@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 for file in $(ls bigquery/*.sql); do
     TABLE="$(basename $file .sql)"
     QUERY="$(cat $file | tr "\n" " ")"

@@ -19,18 +19,31 @@ class Checker(object):
     def close(self):
         self._driver.close()
 
+    @staticmethod
+    def assertEquals(expected, obtained, message):
+        assert expected == obtained, "Expected: {} but obtained: {}.\n {}".format(expected, obtained, message)
+
     def _check_block_exists(self):
         with self._driver.session() as session:
             result = session.read_transaction(self.match_block, self.block_number)
             records = [record for record in result]
-            assert len(records) == 1, "Failed to retrieve exactly one block from the DB"
+            self.assertEquals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
     def _check_transaction_belongs_to_block(self):
         with self._driver.session() as session:
             result = session.read_transaction(self.match_transaction, self.txn_hash)
             records = [record for record in result]
+            self.assertEquals(1, len(records), "Failed to retrieve exactly one transaction from the DB")
 
-            assert len(records) == 1, "Failed to retrieve exactly one transaction from the DB"
+            result = session.read_transaction(self.match_relationship, "Block", "Transaction")
+            records = [record for record in result]
+            self.assertEquals(1, len(records), "Failed to retrieve exactly one relationship transaction to block")
+            self.assertEquals("at", records[0]["r"].type, "The retrieved relationship is of wrong type")
+
+
+    @staticmethod
+    def match_relationship(tx, start, end):
+        return tx.run("MATCH (start:{start})-[r]-(end:{end}) RETURN r".format(start=start, end=end))
 
     @staticmethod
     def match_transaction(tx, txn_hash):
@@ -65,7 +78,7 @@ def main():
         checker.run_checks()
         print("All checks passed. Congrats!!")
     except AssertionError as e:
-        print("One of the assertions failed with message: {}".format(e))
+        print("{}".format(e))
 
 
 if __name__ == '__main__':
