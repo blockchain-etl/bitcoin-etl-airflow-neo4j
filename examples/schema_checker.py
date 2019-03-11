@@ -13,6 +13,8 @@ class Checker(object):
     def __init__(self, uri, user, password, block_number, txn_hash):
         self.block_number = block_number
         self.txn_hash = txn_hash
+        self.output_count = -1
+        self.input_count = -1
 
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 
@@ -20,30 +22,46 @@ class Checker(object):
         self._driver.close()
 
     @staticmethod
-    def assertEquals(expected, obtained, message):
+    def assert_equals(expected, obtained, message):
         assert expected == obtained, "Expected: {} but obtained: {}.\n {}".format(expected, obtained, message)
 
     def _check_block_exists(self):
         with self._driver.session() as session:
             result = session.read_transaction(self.match_block, self.block_number)
             records = [record for record in result]
-            self.assertEquals(len(records), 1, "Failed to retrieve exactly one block from the DB")
+            self.assert_equals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
     def _check_transaction_belongs_to_block(self):
         with self._driver.session() as session:
             result = session.read_transaction(self.match_transaction, self.txn_hash)
             records = [record for record in result]
-            self.assertEquals(1, len(records), "Failed to retrieve exactly one transaction from the DB")
+            self.assert_equals(1, len(records), "Failed to retrieve exactly one transaction from the DB")
 
-            result = session.read_transaction(self.match_relationship, "Block", "Transaction")
+            transaction = records[0]['txn']
+            self.output_count = transaction['output_count']
+            self.input_count = transaction['input_count']
+
+            result = session.read_transaction(self.match_transaction_relationship,
+                                              "Block",
+                                              self.txn_hash)
             records = [record for record in result]
-            self.assertEquals(1, len(records), "Failed to retrieve exactly one relationship transaction to block")
-            self.assertEquals("at", records[0]["r"].type, "The retrieved relationship is of wrong type")
+            self.assert_equals(1, len(records), "Failed to retrieve exactly one relationship transaction to block")
+            self.assert_equals("at", records[0]["r"].type, "The retrieved relationship is of wrong type")
+
+    def _check_transaction_is_linked_to_outputs_and_inputs(self):
+        with self._driver.session() as session:
+            result = session.read_transaction(self.match_transaction_relationship, "Output", self.txn_hash)
+            records = [record for record in result]
+            self.assert_equals(self.output_count + self.input_count,
+                               len(records),
+                               "Mismatch in the number of retrieved outputs")
 
 
     @staticmethod
-    def match_relationship(tx, start, end):
-        return tx.run("MATCH (start:{start})-[r]-(end:{end}) RETURN r".format(start=start, end=end))
+    def match_transaction_relationship(tx, other, txn_hash):
+        return tx.run("MATCH (start:Transaction)-[r]-(other:{other}) "
+                      "WHERE start.hash='{txn_hash}' "
+                      "RETURN r".format(txn_hash=txn_hash, other=other))
 
     @staticmethod
     def match_transaction(tx, txn_hash):
@@ -60,6 +78,7 @@ class Checker(object):
     def run_checks(self):
         self._check_block_exists()
         self._check_transaction_belongs_to_block()
+        self._check_transaction_is_linked_to_outputs_and_inputs()
 
 
 def main():
