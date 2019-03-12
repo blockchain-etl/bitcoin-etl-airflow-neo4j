@@ -8,5 +8,6 @@ SELECT t.`hash`,
        t.input_count,
        t.output_count
 FROM `bigquery-public-data.crypto_bitcoin.transactions` AS t
-WHERE DATE(block_timestamp) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
-  AND DATE(block_timestamp) < CURRENT_DATE()
+WHERE block_number <= 300
+ -- WHERE DATE(block_timestamp) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+ --   AND DATE(block_timestamp) < CURRENT_DATE()

@@ -7,7 +7,7 @@ ON CREATE SET
 	b.weight = toInteger(row.weight),
 	b.version = row.version,
 	b.merkle_root = row.merkle_root,
-	b.timestamp = toInteger(row.timestamp),
+	b.timestamp = datetime(row.timestamp),
 	b.nonce = row.nonce,
 	b.bits = row.bits,
 	b.transaction_count = toInteger(row.transaction_count),

@@ -5,7 +5,7 @@ ON CREATE SET
 		o.required_signatures = toInteger(row.required_signatures),
 		o.type = row.type,
 		o.value = toInteger(row.value),
-		o.is_unspent = toBoolean(true)
+		o.is_spent = toBoolean(false)
 WITH o
 	MATCH (t:Transaction {hash: o.tx_hash})	
 	MERGE (o)<-[:received]-(t);
