@@ -1,8 +1,9 @@
 USING PERIODIC COMMIT 10000
 LOAD CSV WITH HEADERS FROM "$FILENAME" AS row
-CREATE (t:Transaction {hash: row.hash})
-	SET 
+MERGE (t:Transaction {hash: row.hash})
+ON CREATE SET 
 		t.hash = row.hash,
+        t.block_height = toInteger(row.block_number),
 		t.size = toInteger(row.size),
 		t.virtual_size = toInteger(row.virtual_size),
 		t.version = toInteger(row.version),
