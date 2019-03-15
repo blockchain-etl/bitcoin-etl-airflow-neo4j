@@ -40,11 +40,11 @@ class Checker(object):
             neo4j_num_blocks = records[0]['COUNT(b)']
 
         # Bigquery
-        query = """SELECT 
+        query = """SELECT
                      COUNT(*) AS num_blocks
-                   FROM 
+                   FROM
                      `bigquery-public-data.crypto_bitcoin.blocks` AS blocks
-                   WHERE 
+                   WHERE
                      blocks.number <= 300"""
         query_job = self.bq_client.query(query, location="US")
         bq_num_blocks = 0
@@ -76,11 +76,11 @@ class Checker(object):
             neo4j_num_txns = records[0]['COUNT(b)']
 
         # Bigquery
-        query = """SELECT 
+        query = """SELECT
                      COUNT(*) AS num_blocks
-                   FROM 
+                   FROM
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions
-                   WHERE 
+                   WHERE
                      transactions.block_number <= 300"""
         query_job = self.bq_client.query(query, location="US")
         bq_num_txns = 0
@@ -102,13 +102,13 @@ class Checker(object):
 
         # Bigquery
         query = """
-                   SELECT 
+                   SELECT
                      COUNT(inputs)
                    , SUM(inputs.value) AS num_inputs
-                   FROM 
+                   FROM
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions,
                      UNNEST(transactions.inputs) as inputs
-                   WHERE 
+                   WHERE
                      transactions.block_number <= 300"""
         query_job = self.bq_client.query(query, location="US")
         bq_num_inputs = 0
@@ -133,13 +133,13 @@ class Checker(object):
 
         # Bigquery
         query = """
-                   SELECT 
+                   SELECT
                      COUNT(outputs)
                    , SUM(outputs.value) AS num_outputs
-                   FROM 
+                   FROM
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions,
                      UNNEST(transactions.outputs) as outputs
-                   WHERE 
+                   WHERE
                      transactions.block_number <= 300"""
         query_job = self.bq_client.query(query, location="US")
         bq_num_inputs = 0
@@ -168,13 +168,13 @@ class Checker(object):
 
         # Bigquery
         query = """
-            SELECT 
+            SELECT
               COUNT(DISTINCT address)
-            FROM 
+            FROM
               `bigquery-public-data.crypto_bitcoin.inputs` AS inputs
-            CROSS JOIN  
+            CROSS JOIN
               UNNEST(inputs.addresses) AS address
-            WHERE 
+            WHERE
              inputs.block_number <= 300"""
         query_job = self.bq_client.query(query, location="US")
         bq_num_addresses = 0
@@ -195,13 +195,13 @@ class Checker(object):
 
         # Bigquery
         query = """
-            SELECT 
+            SELECT
               COUNT(DISTINCT address)
-            FROM 
+            FROM
               `bigquery-public-data.crypto_bitcoin.outputs` AS outputs
-            CROSS JOIN  
+            CROSS JOIN
               UNNEST(outputs.addresses) AS address
-            WHERE 
+            WHERE
              outputs.block_number <= 300"""
         query_job = self.bq_client.query(query, location="US")
         bq_num_addresses = 0
@@ -320,16 +320,16 @@ class Checker(object):
                 self.assert_equals(0, len(records), "Duplicates found in node kind {kind}".format(kind=kind))
 
         assert_non_duplication("Blocks", """MATCH (b:Block)
-                                            WITH b.hash as block_hash, count(*) as cnt 
-                                            WHERE cnt > 1 
+                                            WITH b.hash as block_hash, count(*) as cnt
+                                            WHERE cnt > 1
                                             RETURN block_hash, cnt""")
         assert_non_duplication("Transactions", """MATCH (t:Transaction)
-                                                  WITH t.hash as tx_hash, count(*) as cnt 
-                                                  WHERE cnt > 1 
+                                                  WITH t.hash as tx_hash, count(*) as cnt
+                                                  WHERE cnt > 1
                                                   RETURN tx_hash, cnt""")
         assert_non_duplication("Outputs", """MATCH (o:Output)
-                                             WITH o.tx_hash as tx_hash, o.output_index as output_index, count(*) as cnt 
-                                             WHERE cnt > 1 
+                                             WITH o.tx_hash as tx_hash, o.output_index as output_index, count(*) as cnt
+                                             WHERE cnt > 1
                                              RETURN tx_hash, output_index, cnt""")
         assert_non_duplication("Addresses", """MATCH (a:Address)
                                                WITH a.address_string as address_string, count(*) as cnt
@@ -350,9 +350,9 @@ class Checker(object):
 def main():
     parser = argparse.ArgumentParser(description='Read parameters.')
     parser.add_argument('--uri', help='The uri for the Neo4J DB (bolt://<host>:<port>)',
-                        default=os.getenv('NEO_ADDRESS'))
+                        default=os.getenv('NEO_URI'))
     parser.add_argument('--user', help='The user for the Neo4J DB', default='neo4j')
-    parser.add_argument('--password', help='The password for the Neo4J DB', default=os.getenv('NEO_PASS'))
+    parser.add_argument('--password', help='The password for the Neo4J DB', default=os.getenv('NEO_PASSWORD'))
 
     args = parser.parse_args()
 
