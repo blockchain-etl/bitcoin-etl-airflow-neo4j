@@ -6,52 +6,63 @@ from datetime import datetime, timedelta
 from airflow import macros
 from airflow.contrib.operators.bigquery_operator import BigQueryOperator
 from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
+from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator
 from airflow.models import DAG, Variable
 from airflow.operators.python_operator import PythonOperator
 from google.cloud import storage
 from neo4j import GraphDatabase
+import jinja2
 
 DEFAULT_ARGS = {
     'owner': 'airflow',
     'depends_on_past': True,
     'start_date': datetime(2009, 1, 3),
+    'end_date': datetime(2009, 1, 13),
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
 NEO4J_URI = Variable.get('NEO4J_URI')
 NEO4J_USER = Variable.get('NEO4J_USER')
-NEO4J_PASSWORD = Variable.get('NEO4J_USER')
+NEO4J_PASSWORD = Variable.get('NEO4J_PASSWORD')
 
 BUCKET = 'staging-btc-etl-temp'
 
 DESTINATION_FOLDER_TEMPLATE = 'gs://{bucket}'.format(bucket=BUCKET) + \
-                              '/neo4j_import/{{macros.ds_format(ds, "%Y-%m-%d", "%Y/%m/%d")}}/' \
+                              '/neo4j_import/{{{macros.ds_format(ds, "%Y-%m-%d", "%Y/%m/%d")}}}/' \
                               '{element}/{element}-*.csv'
 
 
-def load_into_neo4j(ds, element):
+def load_into_neo4j(ds, **kwargs):
+    element = kwargs['element']
     neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     with neo4j_driver.session() as session:
+        template_loader =  jinja2.FileSystemLoader(searchpath='gcs/dags/cypher/')
+        template_env = jinja2.Environment(loader=template_loader)
+        template = template_env.get_template('load-{element}.cypher'.format(element=element))
+        # Load data files
         storage_client = storage.Client()
         bucket = storage_client.get_bucket(BUCKET)
         date_folder = macros.ds_format(ds, "%Y-%m-%d", "%Y/%m/%d")
         prefix = 'neo4j_import/{date_folder}/{element}/'.format(date_folder=date_folder, element=element)
-        for element in bucket.list_blobs(prefix=prefix):
-            logging.info("File found un bucket: ", element)
+        for gs_filename in bucket.list_blobs(prefix=prefix):
+            uri = 'http://storage.googleapis.com/{bucket}/{gs_filename}'.format(bucket=bucket.name,
+                                                                                gs_filename=gs_filename.name)
+            result = session.run(template.render(uri=uri))
+            logging.info("Execution of load into Neo4J returned: %s", result.summary().counters)
 
 
 def build_dag():
     """Build DAG."""
     dag = DAG('btc_to_neo4j',
-              schedule_interval=None,
+              schedule_interval='@daily',
               default_args=DEFAULT_ARGS,
-              catchup=False)
+              catchup=True)
 
     # NOTE: It is import to keep elements of this list in this order since it is required later when loading data
     blockchain_elements = ['blocks', 'txns', 'outputs', 'output_addresses', 'inputs']
     load_dependency = None
     for element in blockchain_elements:
-        table = 'crypto_bitcoin.{element}'.format(element=element)
+        table = 'crypto_bitcoin.{element}'.format(element=element) + '_{{ds_nodash}}'
         bigquery_to_daily_table_task = BigQueryOperator(
             task_id='{element}_to_daily_table'.format(element=element),
             sql='bigquery/{element}.sql'.format(element=element),
@@ -61,7 +72,10 @@ def build_dag():
             dag=dag
         )
 
-        destination_pattern = DESTINATION_FOLDER_TEMPLATE.format(element=element)
+        filename = '{element}/{element}-*.csv'.format(element=element)
+        destination_pattern = 'gs://{bucket}'.format(bucket=BUCKET) + \
+                              '/neo4j_import/{{macros.ds_format(ds, "%Y-%m-%d", "%Y/%m/%d")}}/' + filename
+
         table_to_bucket_task = BigQueryToCloudStorageOperator(
             task_id='{element}_table_to_bucket'.format(element=element),
             source_project_dataset_table=table,
@@ -74,12 +88,20 @@ def build_dag():
 
         load_into_neo4j_task = PythonOperator(
             task_id="load_{element}_into_neo4j".format(element=element),
-            python_callable=lambda ds, **kwargs: load_into_neo4j(destination_pattern),
+            python_callable=load_into_neo4j,
             provide_context=True,
+            op_kwargs={'element': element},
+            dag=dag
+        )
+
+        delete_aux_table = BigQueryTableDeleteOperator(
+            task_id='delete_{element}_table'.format(element=element),
+            deletion_dataset_table=table,
             dag=dag
         )
 
         bigquery_to_daily_table_task >> table_to_bucket_task >> load_into_neo4j_task
+        table_to_bucket_task >> delete_aux_table
 
         # Make sure that we load data in Neo4J in right order
         if load_dependency is not None:

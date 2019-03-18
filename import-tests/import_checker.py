@@ -16,9 +16,11 @@ warnings.filterwarnings("ignore", "Your application has authenticated using end 
 
 class Checker(object):
 
-    def __init__(self, uri, user, password):
+    def __init__(self, uri, user, password, not_included_day='2009-01-14'):
+        """Create checker"""
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
         self.bq_client = bigquery.Client()
+        self.first_day_not_included_in_range = not_included_day
 
     def close(self):
         self._driver.close()
@@ -45,7 +47,7 @@ class Checker(object):
                    FROM
                      `bigquery-public-data.crypto_bitcoin.blocks` AS blocks
                    WHERE
-                     blocks.number <= 300"""
+                     blocks.timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_blocks = 0
         for row in query_job:
@@ -81,7 +83,7 @@ class Checker(object):
                    FROM
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions
                    WHERE
-                     transactions.block_number <= 300"""
+                     transactions.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_txns = 0
         for row in query_job:
@@ -104,12 +106,12 @@ class Checker(object):
         query = """
                    SELECT
                      COUNT(inputs)
-                   , SUM(inputs.value) AS num_inputs
+                   , IFNULL(SUM(inputs.value), 0) AS num_inputs
                    FROM
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions,
                      UNNEST(transactions.inputs) as inputs
                    WHERE
-                     transactions.block_number <= 300"""
+                     transactions.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_inputs = 0
         bq_total_inputs = 0
@@ -135,12 +137,12 @@ class Checker(object):
         query = """
                    SELECT
                      COUNT(outputs)
-                   , SUM(outputs.value) AS num_outputs
+                   , IFNULL(SUM(outputs.value), 0) AS num_outputs
                    FROM
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions,
                      UNNEST(transactions.outputs) as outputs
                    WHERE
-                     transactions.block_number <= 300"""
+                     transactions.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_inputs = 0
         bq_total_inputs = 0
@@ -175,7 +177,7 @@ class Checker(object):
             CROSS JOIN
               UNNEST(inputs.addresses) AS address
             WHERE
-             inputs.block_number <= 300"""
+             inputs.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_addresses = 0
         for row in query_job:
@@ -202,7 +204,7 @@ class Checker(object):
             CROSS JOIN
               UNNEST(outputs.addresses) AS address
             WHERE
-             outputs.block_number <= 300"""
+             outputs.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_addresses = 0
         for row in query_job:
@@ -280,10 +282,11 @@ class Checker(object):
             with self._driver.session() as session:
                 result = session.run(query)
                 records = [record for record in result]
-                expected = records[0]['expected']
-                obtained = records[0]['obtained']
+                if records:
+                    expected = records[0]['expected']
+                    obtained = records[0]['obtained']
 
-                self.assert_equals(expected, obtained, "Orphans found of kind {kind}".format(kind=kind))
+                    self.assert_equals(expected, obtained, "Orphans found of kind {kind}".format(kind=kind))
 
         match_counts_signaling_orphans("Non linked blocks", """
             MATCH links=(__b:Block)-[:next]->(_b:Block)

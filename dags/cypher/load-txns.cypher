@@ -1,5 +1,5 @@
 USING PERIODIC COMMIT 10000
-LOAD CSV WITH HEADERS FROM "$FILENAME" AS row
+LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
 MERGE (t:Transaction {hash: row.hash})
 ON CREATE SET 
 		t.hash = row.hash,

@@ -1,5 +1,5 @@
 USING PERIODIC COMMIT 10000
-LOAD CSV WITH HEADERS FROM "$FILENAME" AS row
+LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
 MERGE (o:Output {tx_hash: row.hash, output_index: toInteger(row.index)})
 ON CREATE SET 
 		o.required_signatures = toInteger(row.required_signatures),
