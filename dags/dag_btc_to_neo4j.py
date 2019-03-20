@@ -25,7 +25,7 @@ NEO4J_URI = Variable.get('NEO4J_URI')
 NEO4J_USER = Variable.get('NEO4J_USER')
 NEO4J_PASSWORD = Variable.get('NEO4J_PASSWORD')
 
-BUCKET = 'staging-btc-etl-temp'
+BUCKET = Variable.get('BUCKET')
 
 DESTINATION_FOLDER_TEMPLATE = 'gs://{bucket}'.format(bucket=BUCKET) + \
                               '/neo4j_import/{{{macros.ds_format(ds, "%Y-%m-%d", "%Y/%m/%d")}}}/' \
