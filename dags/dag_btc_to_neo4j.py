@@ -3,21 +3,21 @@
 import logging
 from datetime import datetime, timedelta
 
+import jinja2
 from airflow import macros
 from airflow.contrib.operators.bigquery_operator import BigQueryOperator
-from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.contrib.operators.bigquery_table_delete_operator import BigQueryTableDeleteOperator
+from airflow.contrib.operators.bigquery_to_gcs import BigQueryToCloudStorageOperator
 from airflow.models import DAG, Variable
 from airflow.operators.python_operator import PythonOperator
 from google.cloud import storage
 from neo4j import GraphDatabase
-import jinja2
 
 DEFAULT_ARGS = {
     'owner': 'airflow',
     'depends_on_past': True,
     'start_date': datetime(2009, 1, 3),
-    'end_date': datetime(2009, 1, 13),
+    'end_date': datetime(2009, 1, 14),
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
@@ -61,6 +61,7 @@ def build_dag():
     # NOTE: It is import to keep elements of this list in this order since it is required later when loading data
     blockchain_elements = ['blocks', 'txns', 'outputs', 'output_addresses', 'inputs']
     load_dependency = None
+
     for element in blockchain_elements:
         table = 'crypto_bitcoin.{element}'.format(element=element) + '_{{ds_nodash}}'
         bigquery_to_daily_table_task = BigQueryOperator(

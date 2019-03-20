@@ -4,6 +4,7 @@ MERGE (t:Transaction {hash: row.hash})
 ON CREATE SET 
 		t.hash = row.hash,
         t.block_height = toInteger(row.block_number),
+        t.block_timestamp = datetime(row.block_timestamp),
 		t.size = toInteger(row.size),
 		t.virtual_size = toInteger(row.virtual_size),
 		t.version = toInteger(row.version),

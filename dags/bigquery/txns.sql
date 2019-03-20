@@ -1,5 +1,6 @@
 SELECT t.`hash`,
        t.block_number,
+       FORMAT_TIMESTAMP("%Y-%m-%dT%X%Ez", t.block_timestamp) AS block_timestamp,
        t.size,
        t.virtual_size,
        t.version,
