@@ -44,6 +44,12 @@ for  key in ${!config[@]}; do
         -- --set ${key} ${config[${key}]}
 done
 
+echo "Limit number of concurrent tasks ingesting into Neo4J..."
+gcloud composer environments run airflow pool \
+   --project $PROJECT \
+   --location $LOCATION \
+   -- --set neo4j_slot 1 "Limit tasks importing to Neo4J to just 1"
+
 echo "Changing config parameters..."
 gcloud composer environments update airflow \
     --project $PROJECT \

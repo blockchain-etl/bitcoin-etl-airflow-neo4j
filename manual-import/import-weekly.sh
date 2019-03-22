@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-BUCKET="staging-btc-etl-temp"
 GS_URL="http://storage.googleapis.com/$BUCKET"
 CYPHER_CMD="cypher-shell -u neo4j -p $NEO_PASSWORD -a $NEO_URI "
 

@@ -17,7 +17,7 @@ DEFAULT_ARGS = {
     'owner': 'airflow',
     'depends_on_past': True,
     'start_date': datetime(2009, 1, 3),
-    'end_date': datetime(2009, 1, 14),
+    'end_date': datetime(2010, 12, 31),
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
@@ -36,7 +36,7 @@ def load_into_neo4j(ds, **kwargs):
     element = kwargs['element']
     neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     with neo4j_driver.session() as session:
-        template_loader =  jinja2.FileSystemLoader(searchpath='gcs/dags/cypher/')
+        template_loader = jinja2.FileSystemLoader(searchpath='gcs/dags/cypher/')
         template_env = jinja2.Environment(loader=template_loader)
         template = template_env.get_template('load-{element}.cypher'.format(element=element))
         # Load data files
@@ -47,8 +47,20 @@ def load_into_neo4j(ds, **kwargs):
         for gs_filename in bucket.list_blobs(prefix=prefix):
             uri = 'http://storage.googleapis.com/{bucket}/{gs_filename}'.format(bucket=bucket.name,
                                                                                 gs_filename=gs_filename.name)
-            result = session.run(template.render(uri=uri))
+            cypher_query = template.render(uri=uri)
+            logging.info(cypher_query)
+            result = session.run(cypher_query)
             logging.info("Execution of load into Neo4J returned: %s", result.summary().counters)
+
+
+def backfill_blocks_in_neo4j(ds, **_):
+    neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+    with neo4j_driver.session() as session:
+        cypher_query = "MATCH (_b:Block)  WHERE date(_b.timestamp) = date('" + ds + "') " \
+                       "MATCH (b:Block {height: _b.height + 1}) " \
+                       "MERGE (_b)-[:next]->(b)"
+        result = session.run(cypher_query)
+        logging.info("Execution of backfill_blocks_into_neo4j: %s", result.summary().counters)
 
 
 def build_dag():
@@ -92,8 +104,22 @@ def build_dag():
             python_callable=load_into_neo4j,
             provide_context=True,
             op_kwargs={'element': element},
+            pool='neo4j_slot',
             dag=dag
         )
+
+        # NOTE: timestamps in blocks are not strictly incremental and since we query by dates it could happen
+        # that we need to backfill some relations.
+        # See: https://bitcoin.stackexchange.com/questions/67618/difference-between-time-and-mediantime-in-getblock
+        if element == 'blocks':
+            backfill_blocks_in_neo4j_task = PythonOperator(
+                task_id="backfill_blocks_in_neo4j",
+                python_callable=backfill_blocks_in_neo4j,
+                provide_context=True,
+                pool='neo4j_slot',
+                dag=dag
+            )
+            load_into_neo4j_task >> backfill_blocks_in_neo4j_task
 
         delete_aux_table = BigQueryTableDeleteOperator(
             task_id='delete_{element}_table'.format(element=element),

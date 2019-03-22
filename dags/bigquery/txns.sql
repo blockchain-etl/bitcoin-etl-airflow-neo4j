@@ -10,3 +10,4 @@ SELECT t.`hash`,
        t.output_count
 FROM `bigquery-public-data.crypto_bitcoin.transactions` AS t
 WHERE block_timestamp >= '{{ds}}' AND block_timestamp < TIMESTAMP_ADD('{{ds}}', INTERVAL 1 DAY)
+ORDER BY t.block_number

@@ -35,7 +35,9 @@ class Checker(object):
         print("Checking number of blocks")
         # Neo4J
         with self._driver.session() as session:
-            result = session.read_transaction(self._retrieve_number_of_nodes, 'Block')
+            result = session.run("MATCH (b:Block) "
+                                 "WHERE b.timestamp < datetime('{end_date}') "
+                                 "RETURN COUNT(b)".format(end_date=self.first_day_not_included_in_range))
             records = [record for record in result]
             self.assert_equals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
@@ -56,26 +58,30 @@ class Checker(object):
         self.assert_equals(bq_num_blocks, neo4j_num_blocks, "Mismatch in the number of blocks")
 
     @staticmethod
-    def _retrieve_number_of_transaction_rels(tx, relation):
-        return tx.run("MATCH n=(output:Output)-[:{relation}]-(:Transaction) "
+    def _retrieve_number_of_transaction_rels(tx, relation, end_date):
+        return tx.run("MATCH n=(output:Output)-[:{relation}]-(t:Transaction) "
+                      "WHERE t.block_timestamp < datetime('{end_date}') "
                       "RETURN "
                       "  COUNT(output) AS count, "
-                      "  SUM(output.value) AS total".format(relation=relation))
+                      "  SUM(output.value) AS total".format(relation=relation, end_date=end_date))
 
     @staticmethod
-    def _retrieve_number_of_nodes(tx, label):
-        result = tx.run("MATCH (b:{label}) RETURN COUNT(b)".format(label=label))
+    def _retrieve_number_of_nodes(tx, label, end_date):
+        cypher = ()
+        result = tx.run(cypher)
         return result
 
     def check_number_of_transactions(self):
         print("Checking number of transactions")
         # Neo4J
         with self._driver.session() as session:
-            result = session.read_transaction(self._retrieve_number_of_nodes, 'Transaction')
+            result = session.run("MATCH (t:Transaction) "
+                                 "WHERE t.block_timestamp < datetime('{end_date}') "
+                                 "RETURN COUNT(t) as count".format(end_date=self.first_day_not_included_in_range))
             records = [record for record in result]
             self.assert_equals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
-            neo4j_num_txns = records[0]['COUNT(b)']
+            neo4j_num_txns = records[0]['count']
 
         # Bigquery
         query = """SELECT
@@ -83,7 +89,8 @@ class Checker(object):
                    FROM
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions
                    WHERE
-                     transactions.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
+                     transactions.block_timestamp < '{end_date}'""".format(
+            end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_txns = 0
         for row in query_job:
@@ -95,7 +102,9 @@ class Checker(object):
         print("Checking inputs")
         # Neo4J
         with self._driver.session() as session:
-            result = session.read_transaction(self._retrieve_number_of_transaction_rels, 'sent')
+            result = session.read_transaction(self._retrieve_number_of_transaction_rels,
+                                              'sent',
+                                              self.first_day_not_included_in_range)
             records = [record for record in result]
             self.assert_equals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
@@ -111,7 +120,8 @@ class Checker(object):
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions,
                      UNNEST(transactions.inputs) as inputs
                    WHERE
-                     transactions.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
+                     transactions.block_timestamp < '{end_date}'""".format(
+            end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_inputs = 0
         bq_total_inputs = 0
@@ -126,7 +136,9 @@ class Checker(object):
         print("Checking outputs")
         # Neo4J
         with self._driver.session() as session:
-            result = session.read_transaction(self._retrieve_number_of_transaction_rels, 'received')
+            result = session.read_transaction(self._retrieve_number_of_transaction_rels,
+                                              'received',
+                                              self.first_day_not_included_in_range)
             records = [record for record in result]
             self.assert_equals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
@@ -142,7 +154,8 @@ class Checker(object):
                      `bigquery-public-data.crypto_bitcoin.transactions` AS transactions,
                      UNNEST(transactions.outputs) as outputs
                    WHERE
-                     transactions.block_timestamp < '{end_date}'""".format(end_date=self.first_day_not_included_in_range)
+                     transactions.block_timestamp < '{end_date}'""".format(
+            end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
         bq_num_inputs = 0
         bq_total_inputs = 0
@@ -154,15 +167,18 @@ class Checker(object):
         self.assert_equals(bq_total_inputs, neo4j_total_inputs, "Mismatch in the summed value of all inputs")
 
     @staticmethod
-    def _count_number_of_addresses_which_own(tx, relation):
-        return tx.run("MATCH (:Transaction)-[:{relation}]-(output:Output)-[:owned]->(address:Address) "
-                      "RETURN COUNT(DISTINCT address) AS count".format(relation=relation))
+    def _count_number_of_addresses_which_own(tx, relation, end_date):
+        return tx.run("MATCH (t:Transaction)-[:{relation}]-(output:Output)-[:owned]->(address:Address) "
+                      "WHERE t.block_timestamp < datetime('{end_date}') "
+                      "RETURN COUNT(DISTINCT address) AS count".format(relation=relation, end_date=end_date))
 
     def check_number_of_addresses_which_own_inputs(self):
         print("Checking addresses which own inputs")
         # Neo4J
         with self._driver.session() as session:
-            result = session.read_transaction(self._count_number_of_addresses_which_own, 'sent')
+            result = session.read_transaction(self._count_number_of_addresses_which_own,
+                                              'sent',
+                                              self.first_day_not_included_in_range)
             records = [record for record in result]
             self.assert_equals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
@@ -189,7 +205,9 @@ class Checker(object):
         print("Checking addresses which own outputs")
         # Neo4J
         with self._driver.session() as session:
-            result = session.read_transaction(self._count_number_of_addresses_which_own, 'received')
+            result = session.read_transaction(self._count_number_of_addresses_which_own,
+                                              'received',
+                                              self.first_day_not_included_in_range)
             records = [record for record in result]
             self.assert_equals(len(records), 1, "Failed to retrieve exactly one block from the DB")
 
@@ -237,8 +255,9 @@ class Checker(object):
                                 b.nonce IS null OR
                                 b.bits IS null OR
                                 b.transaction_count IS null OR
-                                b.coinbase_param IS null
-                            RETURN COUNT(b) AS count""")
+                                b.coinbase_param IS null 
+                                AND b.timestamp < datetime('{end_date}')
+                            RETURN COUNT(b) AS count""".format(end_date=self.first_day_not_included_in_range))
         assert_not_nulls("Transaction", """MATCH (t:Transaction)
                             WHERE
                                 t.hash IS null or
@@ -249,8 +268,9 @@ class Checker(object):
                                 t.is_coinbase IS null or
                                 t.input_count IS null or
                                 t.output_count IS null
-                            RETURN COUNT(t) AS count""")
-        assert_not_nulls("Output", """MATCH (o:Output)<-[:received]-(:Transaction)
+                                AND t.block_timestamp < datetime('{end_date}')
+                            RETURN COUNT(t) AS count""".format(end_date=self.first_day_not_included_in_range))
+        assert_not_nulls("Output", """MATCH (o:Output)<-[:received]-(t:Transaction)
                             WHERE
                                 o.required_signatures IS null or
                                 o.type IS null or
@@ -258,8 +278,9 @@ class Checker(object):
                                 o.is_spent IS null or
                                 o.tx_hash IS null or
                                 o.output_index IS null
-                            RETURN COUNT(o) AS count""")
-        assert_not_nulls("Input", """MATCH (o:Output)-[:sent]->(:Transaction)
+                                AND t.block_timestamp < datetime('{end_date}')
+                            RETURN COUNT(o) AS count""".format(end_date=self.first_day_not_included_in_range))
+        assert_not_nulls("Input", """MATCH (o:Output)-[:sent]->(t:Transaction)
                             WHERE
                                 o.required_signatures IS null or
                                 o.type IS null or
@@ -269,7 +290,8 @@ class Checker(object):
                                 o.output_index IS null or
                                 o.input_index IS null or
                                 o.spending_tx_hash IS null
-                            RETURN COUNT(o) AS count""")
+                                AND t.block_timestamp < datetime('{end_date}')
+                            RETURN COUNT(o) AS count""".format(end_date=self.first_day_not_included_in_range))
         assert_not_nulls("Address", """MATCH (a:Address)
                             WHERE
                                 a.address_string IS null
@@ -290,16 +312,22 @@ class Checker(object):
 
         match_counts_signaling_orphans("Non linked blocks", """
             MATCH links=(__b:Block)-[:next]->(_b:Block)
+            WHERE _b.timestamp < datetime('{end_date}') 
             WITH COUNT(links) as num_links
             MATCH (b:Block)
+            WHERE b.timestamp < datetime('{end_date}') 
             RETURN COUNT(DISTINCT b.hash) as expected, num_links + 1 as obtained
-            """)
+            """.format(end_date=self.first_day_not_included_in_range))
 
         match_counts_signaling_orphans("Transactions linked to blocks",
                                        """MATCH links=(_t:Transaction)-[:at]->(:Block)
+                                          WHERE _t.block_timestamp < datetime('{end_date}')
                                           WITH COUNT(links) as num_txns_linked_to_blocks
                                           MATCH (t:Transaction)
-                                          RETURN COUNT(t) as expected, num_txns_linked_to_blocks as obtained""")
+                                          WHERE t.block_timestamp < datetime('{end_date}')
+                                          RETURN COUNT(t) as expected, num_txns_linked_to_blocks as obtained""".format(
+                                           end_date=self.first_day_not_included_in_range
+                                       ))
 
         match_counts_signaling_orphans("Inputs without Outputs",
                                        """MATCH links=(:Transaction)-[:received]->(o:Output)-[:sent]->(:Transaction)
@@ -352,14 +380,16 @@ class Checker(object):
 
 def main():
     parser = argparse.ArgumentParser(description='Read parameters.')
-    parser.add_argument('--uri', help='The uri for the Neo4J DB (bolt://<host>:<port>)',
+    parser.add_argument('--host', help='The host for the Neo4J DB server',
                         default=os.getenv('NEO_URI'))
     parser.add_argument('--user', help='The user for the Neo4J DB', default='neo4j')
     parser.add_argument('--password', help='The password for the Neo4J DB', default=os.getenv('NEO_PASSWORD'))
+    parser.add_argument('--end-date', help='Last inclusive day we want to check', default='2009-01-14')
 
     args = parser.parse_args()
+    uri = 'bolt+routing://{host}:7687'.format(host=args.host)
 
-    checker = Checker(args.uri, args.user, args.password)
+    checker = Checker(uri, args.user, args.password, args.end_date)
 
     try:
         checker.run_checks()

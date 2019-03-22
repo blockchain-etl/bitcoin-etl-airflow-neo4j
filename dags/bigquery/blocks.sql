@@ -13,3 +13,4 @@ SELECT
  blocks.weight
 FROM `bigquery-public-data.crypto_bitcoin.blocks` as blocks
 WHERE timestamp >= '{{ds}}' AND timestamp < TIMESTAMP_ADD('{{ds}}', INTERVAL 1 DAY)
+ORDER by blocks.number
