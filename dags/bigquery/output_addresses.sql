@@ -4,4 +4,4 @@ SELECT `hash`,
 FROM `bigquery-public-data.crypto_bitcoin.transactions` AS t,
      UNNEST(t.outputs) as o,
      UNNEST(o.addresses) as address
-WHERE block_timestamp >= '{{ds}}' AND block_timestamp < TIMESTAMP_ADD('{{ds}}', INTERVAL 1 DAY)
+WHERE DATE(block_timestamp) >= '{{ds}}' AND DATE(block_timestamp) < DATE_ADD('{{ds}}', INTERVAL 1 {{var.value.INTERVAL}})
