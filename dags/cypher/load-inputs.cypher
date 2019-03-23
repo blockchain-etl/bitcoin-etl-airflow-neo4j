@@ -6,5 +6,5 @@ MERGE (i:Output {tx_hash: row.spent_transaction_hash, output_index: toInteger(ro
 		i.is_spent = toBoolean(true),
 		i.spending_tx_hash = row.hash
 WITH i, row
-MATCH (t:Transaction {hash: row.hash})
+MATCH (t:Transaction {hash: row.hash, block_height: toInteger(row.block_height)})
 MERGE (i)-[:sent]->(t);

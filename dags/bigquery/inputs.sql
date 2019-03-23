@@ -1,4 +1,5 @@
 SELECT t.`hash`,
+       t.block_number as block_height,
        i.index,
        i.spent_transaction_hash,
        i.spent_output_index
