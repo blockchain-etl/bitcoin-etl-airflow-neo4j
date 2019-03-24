@@ -1,10 +1,11 @@
 USING PERIODIC COMMIT 10000
 LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
+MATCH (b:Block {height: toInteger(row.block_number)})
 MERGE (t:Transaction {hash: row.hash, block_height: toInteger(row.block_number)})
 ON CREATE SET 
 		t.hash = row.hash,
-        t.block_height = toInteger(row.block_number),
-        t.block_timestamp = datetime(row.block_timestamp),
+    t.block_height = toInteger(row.block_number),
+    t.block_timestamp = datetime(row.block_timestamp),
 		t.size = toInteger(row.size),
 		t.virtual_size = toInteger(row.virtual_size),
 		t.version = toInteger(row.version),
@@ -12,6 +13,4 @@ ON CREATE SET
 		t.is_coinbase = row.is_coinbase,
 		t.input_count = toInteger(row.input_count),
 		t.output_count = toInteger(row.output_count)
-WITH t, row
-   MATCH (b:Block {height: toInteger(row.block_number)})	
-   MERGE (t)-[:at]->(b);
+MERGE (t)-[:at]->(b);

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 This script is aimed at checking that all elements in the schema are present.
 
@@ -381,7 +383,7 @@ class Checker(object):
 def main():
     parser = argparse.ArgumentParser(description='Read parameters.')
     parser.add_argument('--host', help='The host for the Neo4J DB server',
-                        default=os.getenv('NEO_URI'))
+                        default=os.getenv('NEO_HOST'))
     parser.add_argument('--user', help='The user for the Neo4J DB', default='neo4j')
     parser.add_argument('--password', help='The password for the Neo4J DB', default=os.getenv('NEO_PASSWORD'))
     parser.add_argument('--end-date', help='Last inclusive day we want to check', default='2009-01-14')
