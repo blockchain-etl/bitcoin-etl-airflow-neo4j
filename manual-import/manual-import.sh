@@ -1,17 +1,40 @@
 #!/usr/bin/env bash
 
-# Load 2009
-# ./create-tables.sh 2009-01-01 YEAR
+# Create all loading entries
+declare -A points
+ordered_dates=()
 
-# Load 2010 to 2013
-#for year in $(seq 2010 2013); do
-#    for month in $(seq 1 12); do
-for year in $(seq 2012 2012); do
-    for month in $(seq -f "%02g" 8 8); do
-        START_DATE="${year}-${month}-01"
-        echo "Import for $START_DATE with interval MONTH starting at $(date)"
-        START_DATE=$START_DATE INTERVAL=MONTH ./create-tables.sh
-        START_DATE=$START_DATE ./tables-to-bucket.sh
-        #START_DATE=$START_DATE ./load-into-neo4j.sh
-    done
+#for year in $(seq 2009 2010); do
+#    start_of_year="$year-01-01"
+#    ordered_dates+=($start_of_year)
+#    points[$start_of_year]="YEAR"
+#done
+#
+#for year in $(seq 2011 2012); do
+#    for month in $(seq -f "%02g" 1 12); do
+#        start_of_month="${year}-${month}-01"
+#        ordered_dates+=($start_of_month)
+#        points[$start_of_month]="MONTH"
+#    done
+#done
+
+for year in $(seq 2013 2015); do
+   for week in $(seq 0 51); do
+        start_of_week=$(date -d"$year-01-01 +$(($week  * 7))days" +%Y-%m-%d)
+        ordered_dates+=($start_of_week)
+        points[$start_of_week]="WEEK"
+   done
 done
+
+# First export all data
+for START_DATE in ${ordered_dates[@]}; do
+        echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
+        START_DATE=$START_DATE INTERVAL=${points[${START_DATE}]} ./create-tables.sh
+        START_DATE=$START_DATE ./tables-to-bucket.sh
+done
+
+# # Then load into neo4j
+# for START_DATE in ${ordered_dates[@]}; do
+#         echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
+#         START_DATE=$START_DATE ./load-into-neo4j.sh
+# done
