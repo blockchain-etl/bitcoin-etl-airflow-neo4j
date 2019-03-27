@@ -34,7 +34,7 @@ def main():
     for param in [parse_pair(pair) for pair in args.set]:
         template_args.update(param)
 
-    template_loader = jinja2.FileSystemLoader(searchpath='../dags/')
+    template_loader = jinja2.FileSystemLoader(searchpath='.')
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template(args.template)
     print(template.render(**template_args))
