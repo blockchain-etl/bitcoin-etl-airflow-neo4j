@@ -159,14 +159,14 @@ class Checker(object):
                      transactions.block_timestamp < '{end_date}'""".format(
             end_date=self.first_day_not_included_in_range)
         query_job = self.bq_client.query(query, location="US")
-        bq_num_inputs = 0
-        bq_total_inputs = 0
+        bq_num_outputs = 0
+        bq_total_outputs = 0
         for row in query_job:
-            bq_num_inputs = row[0]
-            bq_total_inputs = row[1]
+            bq_num_outputs = row[0]
+            bq_total_outputs = row[1]
 
-        self.assert_equals(bq_num_inputs, neo4j_num_inputs, "Mismatch in the number of inputs")
-        self.assert_equals(bq_total_inputs, neo4j_total_inputs, "Mismatch in the summed value of all inputs")
+        self.assert_equals(bq_num_outputs, neo4j_num_inputs, "Mismatch in the number of outputs")
+        self.assert_equals(bq_total_outputs, neo4j_total_inputs, "Mismatch in the summed value of all outputs")
 
     @staticmethod
     def _count_number_of_addresses_which_own(tx, relation, end_date):
