@@ -1,4 +1,5 @@
-SELECT `hash`,
+SELECT t.hash,
+       t.block_number as block_height,
        o.index,
        address
 FROM `bigquery-public-data.crypto_bitcoin.transactions` AS t,

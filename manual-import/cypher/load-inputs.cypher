@@ -10,5 +10,5 @@ MERGE (i:Output {tx_hash: row.spent_transaction_hash, output_index: toInteger(ro
 USING PERIODIC COMMIT 10000
 LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
 MATCH (t:Transaction {hash: row.hash, block_height: toInteger(row.block_height)})
-MATCH (i:Output {tx_hash: row.spent_transaction_hash, output_index: toInteger(row.spent_output_index)})
+MATCH (i:Output {tx_hash: row.spent_transaction_hash, block_height: toInteger(row.block_height), output_index: toInteger(row.spent_output_index)})
 MERGE (i)-[:sent]->(t);
