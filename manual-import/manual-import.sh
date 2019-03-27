@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 for var in PROJECT NEO_PASSWORD NEO_HOST; do
     if [[ -z "${!var:-}" ]];
@@ -13,7 +14,7 @@ done
 declare -A points
 ordered_dates=()
 
-for year in $(seq 2009 2009); do
+for year in $(seq 2009 2010); do
     start_of_year="$year-01-01"
     ordered_dates+=($start_of_year)
     points[$start_of_year]="YEAR"
@@ -36,11 +37,11 @@ done
 # done
 
 # First export all data
-#for START_DATE in ${ordered_dates[@]}; do
-#        echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
-#        START_DATE=$START_DATE INTERVAL=${points[${START_DATE}]} ./create-tables.sh
-#        START_DATE=$START_DATE ./tables-to-bucket.sh
-#done
+# for START_DATE in ${ordered_dates[@]}; do
+#         echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
+#         START_DATE=$START_DATE INTERVAL=${points[${START_DATE}]} ./create-tables.sh
+#         START_DATE=$START_DATE ./tables-to-bucket.sh
+# done
 
 # First create all nodes independent of indexes
 for START_DATE in ${ordered_dates[@]}; do
@@ -49,15 +50,15 @@ for START_DATE in ${ordered_dates[@]}; do
 done
 
 # Then we create indexes
-echo "Creating indexes"
+echo "$(date -Iseconds): Creating indexes"
 ./setup-indexes.sh
 
 # Once indexes are created we link previously created nodes.
 CYPHER_CMD="cypher-shell -u neo4j -p $NEO_PASSWORD -a bolt+routing://$NEO_HOST:7687 "
 
-echo "Linking blocks together"
+echo "$(date -Iseconds): Linking blocks together"
 cat cypher/link-blocks.cypher | $CYPHER_CMD
-echo "Linking transactions to blocks"
+echo "$(date -Iseconds): Linking transactions to blocks"
 cat cypher/link-txns.cypher | $CYPHER_CMD
 
 # Now that indexes are created and some other links also we create nodes and relationships that require extra information

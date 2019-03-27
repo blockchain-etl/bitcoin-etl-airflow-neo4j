@@ -13,4 +13,5 @@ SELECT
  blocks.weight
 FROM `bigquery-public-data.crypto_bitcoin.blocks` as blocks
 WHERE DATE(timestamp) >= '{{ds}}' AND DATE(timestamp) < DATE_ADD('{{ds}}', INTERVAL 1 {{var.value.INTERVAL}})
+  AND EXTRACT(YEAR FROM DATE '{{ds}') = EXTRACT(YEAR FROM blocks.timestamp)
 ORDER by blocks.number
