@@ -2,7 +2,6 @@ USING PERIODIC COMMIT 10000
 LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
 CREATE (o:Output {
 	tx_hash: row.hash,
-  block_height: toInteger(row.block_height),
 	output_index: toInteger(row.index),
 	required_signatures: toInteger(row.required_signatures),
 	type: row.type,

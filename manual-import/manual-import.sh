@@ -43,15 +43,15 @@ done
 #         START_DATE=$START_DATE ./tables-to-bucket.sh
 # done
 
-# First create all nodes independent of indexes
-for START_DATE in ${ordered_dates[@]}; do
-        echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
-        START_DATE=$START_DATE ./create-non-linked-nodes.sh
-done
-
-# Then we create indexes
-echo "$(date -Iseconds): Creating indexes"
-./setup-indexes.sh
+## # First create all nodes independent of indexes
+## for START_DATE in ${ordered_dates[@]}; do
+##         echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
+##         START_DATE=$START_DATE ./create-non-linked-nodes.sh
+## done
+## 
+## # Then we create indexes
+## echo "$(date -Iseconds): Creating indexes"
+## ./setup-indexes.sh
 
 # Once indexes are created we link previously created nodes.
 CYPHER_CMD="cypher-shell -u neo4j -p $NEO_PASSWORD -a bolt+routing://$NEO_HOST:7687 "
