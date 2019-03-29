@@ -20,21 +20,21 @@ for year in $(seq 2009 2010); do
     points[$start_of_year]="YEAR"
 done
 
-# for year in $(seq 2011 2012); do
-#     for month in $(seq -f "%02g" 1 12); do
-#         start_of_month="${year}-${month}-01"
-#         ordered_dates+=($start_of_month)
-#         points[$start_of_month]="MONTH"
-#     done
-# done
-#
-# for year in $(seq 2013 2015); do
-#    for week in $(seq 0 52); do
-#         start_of_week=$(date -d"$year-01-01 +$(($week  * 7))days" +%Y-%m-%d)
-#         ordered_dates+=($start_of_week)
-#         points[$start_of_week]="WEEK"
-#    done
-# done
+for year in $(seq 2011 2012); do
+    for month in $(seq -f "%02g" 1 12); do
+        start_of_month="${year}-${month}-01"
+        ordered_dates+=($start_of_month)
+        points[$start_of_month]="MONTH"
+    done
+done
+
+for year in $(seq 2013 2018); do
+   for week in $(seq 0 52); do
+        start_of_week=$(date -d"$year-01-01 +$(($week  * 7))days" +%Y-%m-%d)
+        ordered_dates+=($start_of_week)
+        points[$start_of_week]="WEEK"
+   done
+done
 
 # First export all data
 # for START_DATE in ${ordered_dates[@]}; do
@@ -43,15 +43,15 @@ done
 #         START_DATE=$START_DATE ./tables-to-bucket.sh
 # done
 
-## # First create all nodes independent of indexes
-## for START_DATE in ${ordered_dates[@]}; do
-##         echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
-##         START_DATE=$START_DATE ./create-non-linked-nodes.sh
-## done
-## 
-## # Then we create indexes
-## echo "$(date -Iseconds): Creating indexes"
-## ./setup-indexes.sh
+# First create all nodes independent of indexes
+for START_DATE in ${ordered_dates[@]}; do
+        echo "Import for $START_DATE with interval ${points[${START_DATE}]} starting at $(date)"
+        START_DATE=$START_DATE ./create-non-linked-nodes.sh
+done
+
+# Then we create indexes
+echo "$(date -Iseconds): Creating indexes"
+./setup-indexes.sh
 
 # Once indexes are created we link previously created nodes.
 CYPHER_CMD="cypher-shell -u neo4j -p $NEO_PASSWORD -a bolt+routing://$NEO_HOST:7687 "
