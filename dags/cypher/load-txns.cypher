@@ -10,7 +10,7 @@ ON CREATE SET
 		t.virtual_size = toInteger(row.virtual_size),
 		t.version = toInteger(row.version),
 		t.lock_time = toInteger(row.lock_time),
-		t.is_coinbase = row.is_coinbase,
+		t.is_coinbase = toBoolean(row.is_coinbase),
 		t.input_count = toInteger(row.input_count),
 		t.output_count = toInteger(row.output_count)
 MERGE (t)-[:at]->(b);
