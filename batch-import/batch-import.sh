@@ -47,6 +47,11 @@ function download_datasets {
     mkdir /tmp/datasets
     gsutil cp -r gs://staging-btc-etl/batch_import/* /tmp/datasets
     sudo chown -R neo4j:adm /tmp/datasets
+
+    for dataset in $(ls /tmp/datasets); do
+        sudo -u neo4j rm -rf $IMPORT_FOLDER/$dataset
+    done
+
     sudo -u neo4j mv /tmp/datasets/* $IMPORT_FOLDER
 }
 
