@@ -57,6 +57,7 @@ function download_datasets {
 
 function run_import {
     neo4j-admin import \
+        --database bitcoin.db \
         --report-file /tmp/import-report.txt \
         --nodes:Address "addresses_header.csv,addresses/addresses-.*" \
         --nodes:Block "blocks_header.csv,blocks/blocks-.*" \

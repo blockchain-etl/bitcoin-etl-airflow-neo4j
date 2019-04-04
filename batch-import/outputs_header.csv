@@ -1,1 +1,1 @@
-:ID(Output-ID),tx_hash,output_index:int,required_signatures,type,value,is_spent:boolean,input_index:int,spending_tx_hash
+:ID(Output-ID),tx_hash,output_index:int,required_signatures,type,value:int,is_spent:boolean,input_index:int,spending_tx_hash
