@@ -51,8 +51,11 @@ function download_datasets {
 }
 
 function run_import {
-    neo4j-admin import --nodes="addresses_header.csv,addresses/addresses-.*" \
+    neo4j-admin import \
+        --report-file /tmp/import-report.txt \
+        --nodes="addresses_header.csv,addresses/addresses-.*" \
         --nodes="blocks_header.csv,blocks/blocks-.*" \
+        --nodes="txns_header.csv,txns/txns-.*" \
         --nodes="outputs_header.csv,outputs/outputs-.*" \
         --relationships:next="block_to_block_header.csv,block_to_block/block_to_block-.*" \
         --relationships:at="txns_to_blocks_header.csv,txns_to_blocks/txns_to_blocks-.*" \
