@@ -44,14 +44,17 @@ function export_tables {
 }
 
 function download_datasets {
-    gsutil cp -r gs://staging-btc-etl/batch_import/* $IMPORT_FOLDER
+    mkdir /tmp/datasets
+    gsutil cp -r gs://staging-btc-etl/batch_import/* /tmp/datasets
+    sudo chown -R neo4j:adm /tmp/datasets
+    sudo -u neo4j mv /tmp/datasets/* $IMPORT_FOLDER
 }
 
 function run_import {
     neo4j-admin import --nodes="addresses_header.csv,addresses/addresses-.*" \
         --nodes="blocks_header.csv,blocks/blocks-.*" \
         --nodes="outputs_header.csv,outputs/outputs-.*" \
-        --relationships:next="blocks_to_blocks_header.csv,blocks_to_blocks/blocks_to_blocks-.*" \
+        --relationships:next="block_to_block_header.csv,block_to_block/block_to_block-.*" \
         --relationships:at="txns_to_blocks_header.csv,txns_to_blocks/txns_to_blocks-.*" \
         --relationships:received="outputs_to_txns_header.csv,outputs_to_txns/outputs_to_txns-.*" \
         --relationships:owned="outputs_to_addresses_header.csv,outputs_to_addresses/outputs_to_addresses-.*" \
@@ -60,6 +63,6 @@ function run_import {
 
 # create_tables
 # export_tables
-#download_datasets
+# download_datasets
 run_import
 
