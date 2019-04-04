@@ -56,7 +56,7 @@ function download_datasets {
 }
 
 function dump_and_load {
-   sudo rm -f /tmp/bitcoing.dump
+   sudo rm -f /tmp/bitcoin.dump
    sudo -u neo4j neo4j-admin dump --database=bitcoin.db --to=/tmp/bitcoin.dump
    sudo -u neo4j rm -rf /var/lib/neo4j/data/databases/graph.db
    sudo -u neo4j neo4j-admin load --from=/tmp/bitcoin.dump --database=graph.db
