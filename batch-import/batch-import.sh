@@ -55,8 +55,15 @@ function download_datasets {
     sudo -u neo4j mv /tmp/datasets/* $IMPORT_FOLDER
 }
 
+function dump_and_load {
+   sudo -u neo4j neo4j-admin dump --database=bitcoin.db --to=/tmp/bitcoin.dump
+   sudo -u neo4j rm -rf /var/lib/neo4j/data/databases/graph.db
+   sudo -u neo4j neo4j-admin load --from=/tmp/bitcoin.dump --database=graph.db
+}
+
 function run_import {
-    neo4j-admin import \
+    sudo -u neo4j rm -rf /var/lib/neo4j/data/databases/bitcoin.db
+    sudo -u neo4j neo4j-admin import \
         --database bitcoin.db \
         --report-file /tmp/import-report.txt \
         --nodes:Address "addresses_header.csv,addresses/addresses-.*" \
@@ -70,8 +77,9 @@ function run_import {
         --relationships:sent="inputs_to_txns_header.csv,inputs_to_txns/inputs_to_txns-.*"
 }
 
-create_tables
-export_tables
+# create_tables
+# export_tables
 # download_datasets
-# run_import
+run_import
+dump_and_load
 
