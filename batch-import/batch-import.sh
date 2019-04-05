@@ -72,8 +72,8 @@ function run_import {
         --relationships:sent="inputs_to_txns_header.csv,inputs_to_txns/inputs_to_txns-.*"
 }
 
-# create_tables
-# export_tables
-# download_datasets
+create_tables
+export_tables
+download_datasets
 run_import
 
