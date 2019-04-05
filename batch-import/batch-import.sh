@@ -45,7 +45,7 @@ function export_tables {
 
 function download_datasets {
     mkdir /tmp/datasets
-    gsutil cp -r gs://staging-btc-etl/batch_import/* /tmp/datasets
+    gsutil -m cp -r gs://staging-btc-etl/batch_import/* /tmp/datasets
     sudo chown -R neo4j:adm /tmp/datasets
 
     for dataset in $(ls /tmp/datasets); do
@@ -73,8 +73,8 @@ function run_import {
         --relationships:sent="inputs_to_txns_header.csv,inputs_to_txns/inputs_to_txns-.*"
 }
 
-create_tables
-export_tables
-download_datasets
+# create_tables
+# export_tables
+# download_datasets
 run_import
 
