@@ -53,6 +53,7 @@ function download_datasets {
     done
 
     sudo -u neo4j mv /tmp/datasets/* $IMPORT_FOLDER
+    sudo -u neo4j rm -rf /tmp/datasets
 }
 
 

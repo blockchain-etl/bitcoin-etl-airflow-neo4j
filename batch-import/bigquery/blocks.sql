@@ -12,4 +12,4 @@ SELECT
  blocks.version,
  blocks.weight
 FROM `bigquery-public-data.crypto_bitcoin.blocks` as blocks
-WHERE blocks.timestamp < '2011-01-01'
+WHERE blocks.timestamp < '2019-01-01'
