@@ -55,12 +55,6 @@ function download_datasets {
     sudo -u neo4j mv /tmp/datasets/* $IMPORT_FOLDER
 }
 
-function dump_and_load {
-   sudo rm -f /tmp/bitcoin.dump
-   sudo -u neo4j neo4j-admin dump --database=bitcoin.db --to=/tmp/bitcoin.dump
-   sudo -u neo4j rm -rf /var/lib/neo4j/data/databases/graph.db
-   sudo -u neo4j neo4j-admin load --from=/tmp/bitcoin.dump --database=graph.db
-}
 
 function run_import {
     sudo -u neo4j rm -rf /var/lib/neo4j/data/databases/bitcoin.db
@@ -82,5 +76,4 @@ function run_import {
 # export_tables
 # download_datasets
 run_import
-dump_and_load
 
