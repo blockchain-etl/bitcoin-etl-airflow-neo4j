@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 for var in PROJECT; do
     if [[ -z "${!var:-}" ]];
@@ -13,16 +14,19 @@ IMPORT_FOLDER=/var/lib/neo4j/import
 
 DUMP_CMD="sudo rm -f /tmp/bitcoin.dump && sudo -u neo4j neo4j-admin dump --database=bitcoin.db --to=/tmp/bitcoin.dump"
 LOAD_CMD="sudo -u neo4j rm -rf /var/lib/neo4j/data/databases/graph.db && sudo -u neo4j neo4j-admin load --from=/tmp/bitcoin.dump --database=graph.db"
+SSH_CMD="gcloud compute --project $PROJECT ssh --zone us-central1-a"
 
-echo "Dumping db in LEADER"
-gcloud compute --project "$PROJECT" ssh --zone "us-central1-a" "neo4j-enterprise-causal-cluster-1-core-vm-1" --command "$DUMP_CMD"
-echo "Loading db in LEADER"
-gcloud compute --project "$PROJECT" ssh --zone "us-central1-a" "neo4j-enterprise-causal-cluster-1-core-vm-1" --command "$LOAD_CMD"
+echo "$(date -Iseconds) Dumping db in LEADER"
+$SSH_CMD "neo4j-enterprise-causal-cluster-1-core-vm-1" --command "$DUMP_CMD"
+echo "$(date -Iseconds) Loading db in LEADER"
+$SSH_CMD "neo4j-enterprise-causal-cluster-1-core-vm-1" --command "$LOAD_CMD"
 
-gcloud compute --project "$PROJECT" scp --zone "us-central1-a" "neo4j-enterprise-causal-cluster-1-core-vm-1:/tmp/bitcoin.dump" /tmp
+$SSH_CMD "neo4j-enterprise-causal-cluster-1-core-vm-1" --command "gsutil cp /tmp/bitcoin.dump gs://$PROJECT/dumps/bitcoin.dump"
 
 for instance in 2 3; do
-    gcloud compute --project "$PROJECT" scp --zone "us-central1-a" "/tmp/bitcoin.dump" "neo4j-enterprise-causal-cluster-1-core-vm-$instance:/tmp/"
-    gcloud compute --project "$PROJECT" ssh --zone "us-central1-a" "neo4j-enterprise-causal-cluster-1-core-vm-$instance" --command "$LOAD_CMD"
+    echo "$(date -Iseconds) Downloading dump from bucket to neo4j-enterprise-causal-cluster-1-core-vm-$instance"
+    $SSH_CMD "neo4j-enterprise-causal-cluster-1-core-vm-$instance" --command "gsutil cp gs://$PROJECT/dumps/bitcoin.dump /tmp/bitcoin.dump"
+    echo "$(date -Iseconds) Downloading dump from bucket to neo4j-enterprise-causal-cluster-1-core-vm-$instance"
+    $SSH_CMD "neo4j-enterprise-causal-cluster-1-core-vm-$instance" --command "$LOAD_CMD"
 done
 
