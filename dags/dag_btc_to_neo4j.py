@@ -16,8 +16,7 @@ from neo4j import GraphDatabase
 DEFAULT_ARGS = {
     'owner': 'airflow',
     'depends_on_past': True,
-    'start_date': datetime(2009, 1, 3),
-    'end_date': datetime(2010, 12, 31),
+    'start_date': datetime(2019, 1, 1),
     'retries': 1,
     'retry_delay': timedelta(minutes=5)
 }
