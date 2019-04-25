@@ -12,5 +12,11 @@ ON CREATE SET
 		t.lock_time = toInteger(row.lock_time),
 		t.is_coinbase = toBoolean(row.is_coinbase),
 		t.input_count = toInteger(row.input_count),
-		t.output_count = toInteger(row.output_count)
+		t.output_count = toInteger(row.output_count);
+
+
+USING PERIODIC COMMIT 10000
+LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
+MATCH (b:Block {height: toInteger(row.block_number)})
+MATCH (t:Transaction {hash: row.hash})
 MERGE (t)-[:at]->(b);
