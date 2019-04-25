@@ -15,6 +15,7 @@ config["NEO4J_USER"]=neo4j
 config["NEO4J_PASSWORD"]=$NEO_PASSWORD
 config["NEO4J_URI"]="bolt+routing://$NEO_IP:7687"
 config["BUCKET"]=$PROJECT
+config["INTERVAL"]=DAY
 
 echo "Setting variables"...
 for  key in ${!config[@]}; do
