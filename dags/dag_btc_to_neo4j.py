@@ -46,7 +46,7 @@ def load_into_neo4j(ds, **kwargs):
         for gs_filename in bucket.list_blobs(prefix=prefix):
             uri = 'http://storage.googleapis.com/{bucket}/{gs_filename}'.format(bucket=bucket.name,
                                                                                 gs_filename=gs_filename.name)
-            cypher_queries = template.render(uri=uri).split(';')
+            cypher_queries = [query.strip() for query in template.render(uri=uri).split(';') if query]
             logging.info(cypher_queries)
             for cypher_query in cypher_queries:
                 result = session.run(cypher_query)
