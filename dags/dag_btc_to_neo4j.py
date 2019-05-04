@@ -49,7 +49,7 @@ def load_into_neo4j(ds, **kwargs):
             cypher_queries = [query.strip() for query in template.render(uri=uri).split(';') if query]
             logging.info(cypher_queries)
             for cypher_query in cypher_queries:
-                result = session.run(cypher_query)
+                result = session.run(cypher_query, timeout=30*60)
                 logging.info("Execution of load into Neo4J returned: %s", result.summary().counters)
 
 

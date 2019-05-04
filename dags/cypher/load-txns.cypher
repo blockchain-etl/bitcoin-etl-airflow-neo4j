@@ -1,6 +1,5 @@
 USING PERIODIC COMMIT 10000
 LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
-MATCH (b:Block {height: toInteger(row.block_number)})
 MERGE (t:Transaction {hash: row.hash})
 ON CREATE SET 
 		t.hash = row.hash,
@@ -18,5 +17,6 @@ ON CREATE SET
 USING PERIODIC COMMIT 10000
 LOAD CSV WITH HEADERS FROM "{{uri}}" AS row
 MATCH (b:Block {height: toInteger(row.block_number)})
+WITH b, row
 MATCH (t:Transaction {hash: row.hash})
 MERGE (t)-[:at]->(b);
