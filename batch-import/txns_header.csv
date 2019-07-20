@@ -1,0 +1,1 @@
+hash:ID(Txns-ID),height:int,block_timestamp:datetime,size:int,virtual_size:int,version:int,lock_time:long,is_coinbase:boolean,input_count:int,output_count:int

@@ -1,0 +1,1 @@
+height:ID(Blocks-ID),bits,coinbase_param,hash,merkle_root,nonce,size:int,stripped_size:int,timestamp:datetime,transaction_count:int,version:int,weight:int
