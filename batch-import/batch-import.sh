@@ -12,9 +12,11 @@ done
 IMPORT_FOLDER=/var/lib/neo4j/import
 
 function create_tables {
-    for file in $(ls bigquery/*.sql); do
+    FILE_ORDER=(blocks.sql block_to_block.sql txns.sql txns_to_blocks.sql addresses.sql outputs.sql outputs_to_txns.sql \
+                addresses.sql outputs_to_addresses.sql inputs_to_txns.sql)
+    for file in "${FILE_ORDER[@]}"; do
         TABLE="$(basename $file .sql)"
-        QUERY="$(cat $file | tr "\n" " ")"
+        QUERY="$(cat bigquery/$file | tr "\n" " ")"
 
         echo "  Creating aux table $TABLE"
         bq --location=US query \
@@ -27,7 +29,7 @@ function create_tables {
 }
 
 function export_tables {
-    for file in $(ls bigquery/*.sql); do
+    for file in bigquery/*.sql; do
         TABLE="$(basename $file .sql)"
         FOLDER="gs://$PROJECT/batch_import/$TABLE"
         gsutil rm ${FOLDER}/** || true
@@ -48,7 +50,7 @@ function download_datasets {
     gsutil -m cp -r gs://staging-btc-etl/batch_import/* /tmp/datasets
     sudo chown -R neo4j:adm /tmp/datasets
 
-    for dataset in $(ls /tmp/datasets); do
+    for dataset in /tmp/datasets/*; do
         sudo -u neo4j rm -rf $IMPORT_FOLDER/$dataset
     done
 
@@ -73,8 +75,8 @@ function run_import {
         --relationships:sent="inputs_to_txns_header.csv,inputs_to_txns/inputs_to_txns-.*"
 }
 
-# create_tables
+create_tables
 # export_tables
 # download_datasets
-run_import
+# run_import
 
