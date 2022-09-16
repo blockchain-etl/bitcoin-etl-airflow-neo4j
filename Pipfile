@@ -9,7 +9,7 @@ name = "pypi"
 [dev-packages]
 google-cloud-storage = "*"
 google-cloud-bigquery = "*"
-apache-airflow = "~=1.10"
+apache-airflow = "~=2.3"
 ipython = "*"
 
 [requires]
